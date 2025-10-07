@@ -47,7 +47,7 @@ library(snowflakeR)
 key_path <- "~/keys/rsa_key.p8"
 con <- SnowflakeConnector$new(
   dsn           = "your-snowflake-dsn",
-  uid           = "your-snowflake-user,
+  uid           = "your-snowflake-user",
   role          = "your-snowflake-role",
   warehouse     = "your-snowflake-warehouse",
   database      = "your-snowflake-database",
