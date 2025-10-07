@@ -1,0 +1,31 @@
+Package: snowflakeR
+Type: Package
+Title: Lightweight R6 Connector and Helpers for Snowflake via ODBC.
+Version: 0.1.0
+Authors@R:
+  person("Patrikios", "", role = c("aut", "cre"), email = "Patrikios@users.noreply.github.com")
+Description: A small, focused package providing an R6-based Snowflake connector
+    over ODBC with convenient query execution (glue-sql interpolation), 
+    data.table attributes for lineage, and simple transaction and write helpers. 
+    Credentials are expected to be provided by your ODBC DSN and/or function 
+    arguments; no YAML or similar parsing of credentials is included. Functionality 
+    includes reading data from and writing data to your Snowflake account as well 
+    as execute queries and supports simple transactional processing. A system 
+    requirement (outside R) is a Snowflake ODBC driver + a configured DSN on the 
+    host.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Depends: R (>= 3.6.3)
+Imports: 
+    DBI (>= 1.2.3),
+    odbc (>= 1.5.0),
+    data.table (>= 1.16.0),
+    glue (>= 1.8.0),
+    R6 (>= 2.5.1),
+    utils (>= 4.4.1),
+Suggests:
+    testthat (>= 3.0.0),
+Config/testthat/edition: 3
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
