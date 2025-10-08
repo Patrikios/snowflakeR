@@ -43,7 +43,10 @@ library(snowflakeR)
 # New SnowflakeConnector instance using key-pair authentication.
 # Key-pair authentication (AUTHENTICATOR = "SNOWFLAKE_JWT") disregards the 
 # password field and uses the 'PRIV_KEY_FILE' file path to the private key (for
-# example file names 'rsa_key.p8').
+# example file name for the provate key could be 'rsa_key.p8' saved in 
+# directory 'keys' in user's home folder).
+# read more on Snowflake's key-pair authentication at https://docs.snowflake.com/en/user-guide/key-pair-auth
+
 key_path <- "~/keys/rsa_key.p8"
 con <- SnowflakeConnector$new(
   dsn           = "your-snowflake-dsn",

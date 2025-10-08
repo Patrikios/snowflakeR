@@ -97,60 +97,63 @@
 <span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co"># New SnowflakeConnector instance using key-pair authentication.</span></span>
 <span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co"># Key-pair authentication (AUTHENTICATOR = "SNOWFLAKE_JWT") disregards the </span></span>
 <span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co"># password field and uses the 'PRIV_KEY_FILE' file path to the private key (for</span></span>
-<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co"># example file names 'rsa_key.p8').</span></span>
-<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>key_path <span class="ot">&lt;-</span> <span class="st">"~/keys/rsa_key.p8"</span></span>
-<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>con <span class="ot">&lt;-</span> SnowflakeConnector<span class="sc">$</span><span class="fu">new</span>(</span>
-<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>  <span class="at">dsn           =</span> <span class="st">"your-snowflake-dsn"</span>,</span>
-<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>  <span class="at">uid           =</span> <span class="st">"your-snowflake-user,</span></span>
-<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="st">  role          = "</span>your<span class="sc">-</span>snowflake<span class="sc">-</span>role<span class="st">",</span></span>
-<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="st">  warehouse     = "</span>your<span class="sc">-</span>snowflake<span class="sc">-</span>warehouse<span class="st">",</span></span>
-<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="st">  database      = "</span>your<span class="sc">-</span>snowflake<span class="sc">-</span>database<span class="st">",</span></span>
-<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="st">  schema        = "</span>your<span class="sc">-</span>snowflake<span class="sc">-</span>schema<span class="st">"</span></span>
-<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="st">  tz            = "</span>Europe<span class="sc">/</span>Berlin<span class="st">",</span></span>
-<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a><span class="st">  tz_out        = "</span>Europe<span class="sc">/</span>Berlin<span class="st">",</span></span>
-<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a><span class="st">  AUTHENTICATOR = "</span>SNOWFLAKE_JWT<span class="st">",</span></span>
-<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a><span class="st">  PRIV_KEY_FILE = key_path</span></span>
-<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a><span class="st">)</span></span>
-<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a></span>
-<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a><span class="st"># run query 1, return data.table object</span></span>
-<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a><span class="st">con$run_query("</span>show tables<span class="st">")</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co"># example file name for the provate key could be 'rsa_key.p8' saved in </span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co"># directory 'keys' in user's home folder).</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co"># read more on Snowflake's key-pair authentication at https://docs.snowflake.com/en/user-guide/key-pair-auth</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>key_path <span class="ot">&lt;-</span> <span class="st">"~/keys/rsa_key.p8"</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>con <span class="ot">&lt;-</span> SnowflakeConnector<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a>  <span class="at">dsn           =</span> <span class="st">"your-snowflake-dsn"</span>,</span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>  <span class="at">uid           =</span> <span class="st">"your-snowflake-user"</span>,</span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a>  <span class="at">role          =</span> <span class="st">"your-snowflake-role"</span>,</span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a>  <span class="at">warehouse     =</span> <span class="st">"your-snowflake-warehouse"</span>,</span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a>  <span class="at">database      =</span> <span class="st">"your-snowflake-database"</span>,</span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a>  <span class="at">schema        =</span> <span class="st">"your-snowflake-schema"</span></span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a>  <span class="at">tz            =</span> <span class="st">"Europe/Berlin"</span>,</span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a>  <span class="at">tz_out        =</span> <span class="st">"Europe/Berlin"</span>,</span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a>  <span class="at">AUTHENTICATOR =</span> <span class="st">"SNOWFLAKE_JWT"</span>,</span>
+<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a>  <span class="at">PRIV_KEY_FILE =</span> key_path</span>
+<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a>)</span>
 <span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a></span>
-<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a><span class="st"># get a table</span></span>
-<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a><span class="st">res &lt;- con$run_query("</span>SELECT <span class="sc">*</span> FROM your_schema.your_table LIMIT <span class="dv">100</span><span class="st">")</span></span>
+<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a><span class="co"># run query 1, return data.table object</span></span>
+<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a>con<span class="sc">$</span><span class="fu">run_query</span>(<span class="st">"show tables"</span>)</span>
 <span id="cb2-27"><a href="#cb2-27" tabindex="-1"></a></span>
-<span id="cb2-28"><a href="#cb2-28" tabindex="-1"></a><span class="st"># returns data.table object</span></span>
-<span id="cb2-29"><a href="#cb2-29" tabindex="-1"></a><span class="st">str(res)</span></span>
+<span id="cb2-28"><a href="#cb2-28" tabindex="-1"></a><span class="co"># get a table</span></span>
+<span id="cb2-29"><a href="#cb2-29" tabindex="-1"></a>res <span class="ot">&lt;-</span> con<span class="sc">$</span><span class="fu">run_query</span>(<span class="st">"SELECT * FROM your_schema.your_table LIMIT 100"</span>)</span>
 <span id="cb2-30"><a href="#cb2-30" tabindex="-1"></a></span>
-<span id="cb2-31"><a href="#cb2-31" tabindex="-1"></a><span class="st"># automatic parses the sources that were queried within statement</span></span>
-<span id="cb2-32"><a href="#cb2-32" tabindex="-1"></a><span class="st">attr(res, "</span>snowflake<span class="sc">-</span>sources<span class="st">")</span></span>
+<span id="cb2-31"><a href="#cb2-31" tabindex="-1"></a><span class="co"># returns data.table object</span></span>
+<span id="cb2-32"><a href="#cb2-32" tabindex="-1"></a><span class="fu">str</span>(res)</span>
 <span id="cb2-33"><a href="#cb2-33" tabindex="-1"></a></span>
-<span id="cb2-34"><a href="#cb2-34" tabindex="-1"></a><span class="st"># show query history on the connection</span></span>
-<span id="cb2-35"><a href="#cb2-35" tabindex="-1"></a><span class="st">con$run_query_history</span></span>
+<span id="cb2-34"><a href="#cb2-34" tabindex="-1"></a><span class="co"># automatic parses the sources that were queried within statement</span></span>
+<span id="cb2-35"><a href="#cb2-35" tabindex="-1"></a><span class="fu">attr</span>(res, <span class="st">"snowflake-sources"</span>)</span>
 <span id="cb2-36"><a href="#cb2-36" tabindex="-1"></a></span>
-<span id="cb2-37"><a href="#cb2-37" tabindex="-1"></a></span>
-<span id="cb2-38"><a href="#cb2-38" tabindex="-1"></a><span class="st"># Parameterized, safely interpolated query</span></span>
-<span id="cb2-39"><a href="#cb2-39" tabindex="-1"></a><span class="st">min_id &lt;- 1000</span></span>
-<span id="cb2-40"><a href="#cb2-40" tabindex="-1"></a><span class="st">res &lt;- con$run_query(</span></span>
-<span id="cb2-41"><a href="#cb2-41" tabindex="-1"></a><span class="st">  "</span>SELECT <span class="sc">*</span> FROM your_schema.your_table WHERE id <span class="sc">&gt;</span> {min_id} LIMIT <span class="dv">100</span><span class="st">"</span></span>
-<span id="cb2-42"><a href="#cb2-42" tabindex="-1"></a><span class="st">  )</span></span>
-<span id="cb2-43"><a href="#cb2-43" tabindex="-1"></a><span class="st">str(res)</span></span>
-<span id="cb2-44"><a href="#cb2-44" tabindex="-1"></a><span class="st">attr(res, "</span>snowflake<span class="sc">-</span>sources<span class="st">")</span></span>
-<span id="cb2-45"><a href="#cb2-45" tabindex="-1"></a></span>
-<span id="cb2-46"><a href="#cb2-46" tabindex="-1"></a><span class="st"># Write data</span></span>
-<span id="cb2-47"><a href="#cb2-47" tabindex="-1"></a><span class="st">con$write_data(</span></span>
-<span id="cb2-48"><a href="#cb2-48" tabindex="-1"></a><span class="st">  DBI::Id(schema = "</span>STAGE<span class="st">", table = "</span>TMP_UPLOAD<span class="st">"), </span></span>
-<span id="cb2-49"><a href="#cb2-49" tabindex="-1"></a><span class="st">  value = res, </span></span>
-<span id="cb2-50"><a href="#cb2-50" tabindex="-1"></a><span class="st">  overwrite = TRUE</span></span>
-<span id="cb2-51"><a href="#cb2-51" tabindex="-1"></a><span class="st">  )</span></span>
-<span id="cb2-52"><a href="#cb2-52" tabindex="-1"></a></span>
-<span id="cb2-53"><a href="#cb2-53" tabindex="-1"></a><span class="st"># Transactions</span></span>
-<span id="cb2-54"><a href="#cb2-54" tabindex="-1"></a><span class="st">con$transaction_begin()</span></span>
-<span id="cb2-55"><a href="#cb2-55" tabindex="-1"></a><span class="st"># ... your dbExecute/dbWriteTable calls ...</span></span>
-<span id="cb2-56"><a href="#cb2-56" tabindex="-1"></a><span class="st">con$transaction_commit()</span></span>
-<span id="cb2-57"><a href="#cb2-57" tabindex="-1"></a><span class="st"># or con$transaction_rollback()</span></span>
-<span id="cb2-58"><a href="#cb2-58" tabindex="-1"></a></span>
-<span id="cb2-59"><a href="#cb2-59" tabindex="-1"></a><span class="st"># Close</span></span>
-<span id="cb2-60"><a href="#cb2-60" tabindex="-1"></a><span class="st">con$close()</span></span></code></pre></div>
+<span id="cb2-37"><a href="#cb2-37" tabindex="-1"></a><span class="co"># show query history on the connection</span></span>
+<span id="cb2-38"><a href="#cb2-38" tabindex="-1"></a>con<span class="sc">$</span>run_query_history</span>
+<span id="cb2-39"><a href="#cb2-39" tabindex="-1"></a></span>
+<span id="cb2-40"><a href="#cb2-40" tabindex="-1"></a></span>
+<span id="cb2-41"><a href="#cb2-41" tabindex="-1"></a><span class="co"># Parameterized, safely interpolated query</span></span>
+<span id="cb2-42"><a href="#cb2-42" tabindex="-1"></a>min_id <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb2-43"><a href="#cb2-43" tabindex="-1"></a>res <span class="ot">&lt;-</span> con<span class="sc">$</span><span class="fu">run_query</span>(</span>
+<span id="cb2-44"><a href="#cb2-44" tabindex="-1"></a>  <span class="st">"SELECT * FROM your_schema.your_table WHERE id &gt; {min_id} LIMIT 100"</span></span>
+<span id="cb2-45"><a href="#cb2-45" tabindex="-1"></a>  )</span>
+<span id="cb2-46"><a href="#cb2-46" tabindex="-1"></a><span class="fu">str</span>(res)</span>
+<span id="cb2-47"><a href="#cb2-47" tabindex="-1"></a><span class="fu">attr</span>(res, <span class="st">"snowflake-sources"</span>)</span>
+<span id="cb2-48"><a href="#cb2-48" tabindex="-1"></a></span>
+<span id="cb2-49"><a href="#cb2-49" tabindex="-1"></a><span class="co"># Write data</span></span>
+<span id="cb2-50"><a href="#cb2-50" tabindex="-1"></a>con<span class="sc">$</span><span class="fu">write_data</span>(</span>
+<span id="cb2-51"><a href="#cb2-51" tabindex="-1"></a>  DBI<span class="sc">::</span><span class="fu">Id</span>(<span class="at">schema =</span> <span class="st">"STAGE"</span>, <span class="at">table =</span> <span class="st">"TMP_UPLOAD"</span>), </span>
+<span id="cb2-52"><a href="#cb2-52" tabindex="-1"></a>  <span class="at">value =</span> res, </span>
+<span id="cb2-53"><a href="#cb2-53" tabindex="-1"></a>  <span class="at">overwrite =</span> <span class="cn">TRUE</span></span>
+<span id="cb2-54"><a href="#cb2-54" tabindex="-1"></a>  )</span>
+<span id="cb2-55"><a href="#cb2-55" tabindex="-1"></a></span>
+<span id="cb2-56"><a href="#cb2-56" tabindex="-1"></a><span class="co"># Transactions</span></span>
+<span id="cb2-57"><a href="#cb2-57" tabindex="-1"></a>con<span class="sc">$</span><span class="fu">transaction_begin</span>()</span>
+<span id="cb2-58"><a href="#cb2-58" tabindex="-1"></a><span class="co"># ... your dbExecute/dbWriteTable calls ...</span></span>
+<span id="cb2-59"><a href="#cb2-59" tabindex="-1"></a>con<span class="sc">$</span><span class="fu">transaction_commit</span>()</span>
+<span id="cb2-60"><a href="#cb2-60" tabindex="-1"></a><span class="co"># or con$transaction_rollback()</span></span>
+<span id="cb2-61"><a href="#cb2-61" tabindex="-1"></a></span>
+<span id="cb2-62"><a href="#cb2-62" tabindex="-1"></a><span class="co"># Close</span></span>
+<span id="cb2-63"><a href="#cb2-63" tabindex="-1"></a>con<span class="sc">$</span><span class="fu">close</span>()</span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="usage-patterns">Usage patterns<a class="anchor" aria-label="anchor" href="#usage-patterns"></a>
