@@ -4,10 +4,10 @@
 \alias{SnowflakeConnector}
 \title{SnowflakeConnector: An R6 Snowflake ODBC helper}
 \description{
-\code{SnowflakeConnector} encapsulates a Snowflake ODBC connection with:
+\code{SnowflakeConnector} encapsulates a Snowflake ODBC connection with modular helpers for:
 \itemize{
 \item Safe SQL interpolation via \code{glue::glue_sql()} bound to the connection
-\item Query history tracking (\code{run_query_history})
+\item Query history tracking (\code{run_query_history}) with structured metadata
 \item \code{data.table::setattr} lineage under \code{"snowflake-sources"}
 \item Simple transactions (\verb{$transaction_begin/commit/rollback})
 \item Simple writes (\verb{$write_data})
@@ -19,8 +19,8 @@ arguments (\code{uid}, \code{pwd}, etc.). This package does \strong{not} read YA
 \section{Public fields}{
 
 \describe{
-\item{connection}{The live DBI ODBC connection object.}
-\item{run_query_history}{\code{data.table} with columns \code{query} and \code{result}.}
+\item{connection}{Active binding returning the live DBI ODBC connection.}
+\item{run_query_history}{Active binding returning a \code{data.table} with query execution metadata.}
 }
 }
 

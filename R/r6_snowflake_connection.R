@@ -1,20 +1,15 @@
 #' SnowflakeConnector: An R6 Snowflake ODBC helper
 #'
 #' @description
-#' `SnowflakeConnector` encapsulates a Snowflake ODBC connection with:
-#' - Safe SQL interpolation via `glue::glue_sql()` bound to the connection
-#' - Query history tracking (`run_query_history`)
-#' - `data.table::setattr` lineage under `"snowflake-sources"`
-#' - Simple transactions (`$transaction_begin/commit/rollback`)
-#' - Simple writes (`$write_data`)
-#'
-#' Credentials are expected to be provided by your DSN and/or the constructor
-#' arguments (`uid`, `pwd`, etc.). This package does **not** read YAML files.
+#' `SnowflakeConnector` encapsulates a Snowflake ODBC connection with modular
+#' components that manage the connection lifecycle, query execution, lineage
+#' tagging, and logging. The refactored design improves testability while
+#' retaining the external API that existing users depend on.
 #'
 #' @section Public fields:
 #' \describe{
-#'   \item{connection}{The live DBI ODBC connection object.}
-#'   \item{run_query_history}{`data.table` with columns `query` and `result`.}
+#'   \item{connection}{Active binding returning the live DBI ODBC connection.}
+#'   \item{run_query_history}{Active binding returning a `data.table` summarising executed queries.}
 #' }
 #'
 #' @param dsn ODBC DSN name.
@@ -29,9 +24,9 @@
 #' @param ... Additional arguments passed to `DBI::dbConnect()`.
 #'
 #' @seealso \code{\link{snowflake_get_query_dsn}}, \code{\link{sqlQuerySources}}
-#' 
+#'
 #' @export
-#' 
+#'
 #' @examples
 #' \dontrun{
 #' con <- SnowflakeConnector$new(
@@ -49,108 +44,116 @@
 SnowflakeConnector <- R6::R6Class(
   classname = "SnowflakeConnector",
   public = list(
-    
-    #' @field connection The live DBI ODBC connection object.
-    connection = "OdbcConnection", # Formal class 'Snowflake' [package ".GlobalEnv"] #NULL,
-    
-    #' @field run_query_history `data.table` with columns `query` and `result`.
-    run_query_history = data.table::data.table(
-      query = character(), 
-      result = character()
-      ),
-    
+
     #' @description Construct a new connector (opens a connection).
     initialize = function(
-    dsn,
-    uid = NULL, 
-    pwd = NULL,
-    database = NULL, 
-    schema = NULL, 
-    role = NULL, 
-    warehouse = NULL,
-    timezone = Sys.timezone(), 
-    timezone_out = Sys.timezone(),
-    ...
+      dsn,
+      uid = NULL,
+      pwd = NULL,
+      database = NULL,
+      schema = NULL,
+      role = NULL,
+      warehouse = NULL,
+      timezone = Sys.timezone(),
+      timezone_out = Sys.timezone(),
+      ...
     ) {
-      self$connection <- DBI::dbConnect(
-        odbc::odbc(),
-        dsn          = dsn,
-        uid          = uid,
-        pwd          = pwd,
-        database     = database,
-        schema       = schema,
-        role         = role,
-        warehouse    = warehouse,
-        timezone     = timezone,
+      connection_args <- Filter(
+        function(x) !is.null(x),
+        list(
+        dsn = dsn,
+        uid = uid,
+        pwd = pwd,
+        database = database,
+        schema = schema,
+        role = role,
+        warehouse = warehouse,
+        timezone = timezone,
         timezone_out = timezone_out,
         ...
+        )
+      )
+      private$connection_manager <- OdbcConnectionManager$new(connection_args)
+      private$query_logger <- SnowflakeQueryLogger$new()
+      private$lineage_tracker <- SnowflakeLineageTracker$new()
+      private$query_executor <- SnowflakeQueryExecutor$new(
+        private$connection_manager,
+        private$query_logger,
+        private$lineage_tracker
       )
       invisible(self)
     },
-    
+
     #' @description Close the connection.
     close = function() {
-      if (!is.null(self$connection)) {
-        try(DBI::dbDisconnect(self$connection), silent = TRUE)
-      }
+      private$connection_manager$close()
       invisible(TRUE)
     },
-    
+
     #' @description Execute a SELECT and return a `data.table` (with lineage attribute).
     #' @param SQL SQL string (glue placeholders allowed).
     #' @param literal If `TRUE`, skip parameter quoting (passed to `glue_sql()`).
     #' @param glue_envir Environment where glue placeholders are evaluated.
     run_query = function(SQL, literal = FALSE, glue_envir = parent.frame(1L)) {
-      stopifnot(DBI::dbIsValid(self$connection))
-      stmt <- glue::glue_sql(SQL, .con = self$connection, .envir = glue_envir, .literal = literal)
-      res <- try(DBI::dbGetQuery(self$connection, stmt), silent = TRUE)
-      
-      if (inherits(res, "try-error")) {
-        msg <- conditionMessage(attr(res, "condition"))
-        self$run_query_history <- data.table::rbindlist(list(
-          self$run_query_history,
-          data.table::data.table(query = SQL, result = msg)
-        ))
-        stop(msg, call. = FALSE)
-      }
-      
-      dt <- data.table::as.data.table(res)
-      data.table::setattr(dt, "snowflake-sources",
-                          paste(sqlQuerySources(SQL), collapse = ", "))
-      
-      self$run_query_history <- data.table::rbindlist(list(
-        self$run_query_history,
-        data.table::data.table(query = SQL, result = "passed")
-      ))
-      dt
+      private$query_executor$run_query(SQL, literal, glue_envir)
     },
-    
+
     #' @description Write a data.frame / data.table into Snowflake.
     #' @param table Target table name (`character`) or `DBI::Id`.
     #' @param value Data to write (`data.frame` / `data.table`).
     #' @param ... Passed to `DBI::dbWriteTable()` (e.g., `append = TRUE`, `overwrite = TRUE`).
     write_data = function(table, value, ...) {
-      stopifnot(DBI::dbIsValid(self$connection))
-      DBI::dbWriteTable(self$connection, name = table, value = value, ...)
+      conn <- private$connection_manager$get_connection()
+      DBI::dbWriteTable(conn, name = table, value = value, ...)
       invisible(TRUE)
     },
-    
+
     #' @description Begin a transaction.
-    transaction_begin = function() DBI::dbBegin(self$connection),
-    
+    transaction_begin = function() {
+      conn <- private$connection_manager$get_connection()
+      DBI::dbBegin(conn)
+    },
+
     #' @description Commit a transaction.
-    transaction_commit = function() DBI::dbCommit(self$connection),
-    
+    transaction_commit = function() {
+      conn <- private$connection_manager$get_connection()
+      DBI::dbCommit(conn)
+    },
+
     #' @description Roll back a transaction.
-    transaction_rollback = function() DBI::dbRollback(self$connection)
+    transaction_rollback = function() {
+      conn <- private$connection_manager$get_connection()
+      DBI::dbRollback(conn)
+    }
   ),
-  
+  active = list(
+    #' @field connection Active binding exposing the underlying DBI connection.
+    connection = function(value) {
+      if (missing(value)) {
+        private$connection_manager$get_connection()
+      } else {
+        stop("`connection` is read-only", call. = FALSE)
+      }
+    },
+
+    #' @field run_query_history Active binding exposing the query logger history.
+    run_query_history = function(value) {
+      if (missing(value)) {
+        private$query_logger$get_history()
+      } else {
+        stop("`run_query_history` is read-only", call. = FALSE)
+      }
+    }
+  ),
   private = list(
-    # Finalizer: ensure the connection is closed when GC collects the object
-    # Docu on finalizers https://r6.r-lib.org/articles/Introduction.html#finalizers
+    connection_manager = NULL,
+    query_logger = NULL,
+    lineage_tracker = NULL,
+    query_executor = NULL,
+
     finalize = function() {
-      if (!is.null(self$connection)) {
-        try(DBI::dbDisconnect(self$connection), silent = TRUE)
+      if (!is.null(private$connection_manager)) {
+        private$connection_manager$close()
       }
     }
   )

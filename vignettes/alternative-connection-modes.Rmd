@@ -1,0 +1,85 @@
+---
+title: "snowflakeR connection modes"
+author: "snowflakeR maintainers"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{snowflakeR connection modes}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Overview
+
+`snowflakeR` now offers two complementary connection strategies:
+
+1. `SnowflakeConnector` — the established ODBC-based R6 helper with modular connection, execution, lineage, and logging components.
+2. `SnowflakeSQLAPIClient` — an experimental HTTP client that targets the Snowflake SQL API for environments where installing the ODBC driver is impractical.
+
+This vignette walks through when to use each mode, how to configure them, and the security implications to keep in mind.
+
+# ODBC connector refresher
+
+```{r odbc-example, eval = FALSE}
+library(snowflakeR)
+
+con <- SnowflakeConnector$new(
+  dsn = "analytics-prod",
+  role = "ANALYST",
+  warehouse = "BI_WH",
+  database = "ANALYTICS",
+  schema = "PUBLIC"
+)
+
+res <- con$run_query("SELECT CURRENT_TIMESTAMP() AS ts")
+print(res)
+attr(res, "snowflake-sources")
+con$close()
+```
+
+Key improvements in the modernization branch:
+
+- Active bindings expose the live DBI connection and structured query history without allowing accidental mutation.
+- Query execution is routed through dedicated helpers that capture lineage metadata and log success/failure outcomes.
+- New unit tests mock DBI to verify behaviour without reaching a live Snowflake instance.
+
+# SQL API prototype
+
+```{r sql-api-example, eval = FALSE}
+client <- SnowflakeSQLAPIClient$new(
+  account = "xy12345",
+  warehouse = "COMPUTE_WH",
+  database = "ANALYTICS",
+  schema = "PUBLIC"
+)
+client$set_token(Sys.getenv("SNOWFLAKE_SQLAPI_TOKEN"))
+
+response <- client$submit_statement(
+  "SELECT CURRENT_REGION()",
+  async = TRUE
+)
+str(response)
+```
+
+## When to use the SQL API client
+
+- **Serverless jobs** where installing the Snowflake ODBC driver is infeasible (e.g. GitHub Actions, ephemeral containers).
+- **Security-sensitive environments** that mandate OAuth flows or external browser authentication.
+- **Interoperability testing** before committing to a broader Snowpark or JDBC investment.
+
+## Security considerations
+
+- Treat tokens as secrets—integrate with your vault or workload identity provider and prefer short-lived scopes.
+- Avoid writing tokens to disk; the R6 client only stores them in-memory for the duration of the request.
+- Audit responses for personally identifiable data before logging; the prototype leaves logging decisions to the caller.
+
+# Feedback & roadmap
+
+We now run monthly maintainer retrospectives and quarterly user surveys. Share your pain points via GitHub Discussions or the issue templates—insights directly shape the prioritised backlog documented in `docs/modernization_plan.md`.
+

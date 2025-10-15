@@ -1,12 +1,14 @@
 
 # snowflakeR
 
-> Lightweight **R6** Connector & helpers for **Snowflake** over **ODBC**.
+> Lightweight **R6** Connector & helpers for **Snowflake** over **ODBC**, now with modular internals and a prototype SQL API client for non-ODBC workloads.
 
 - **No YAML**: credentials are **not** read from files; use your **DSN** and/or pass `uid`, `pwd`, etc.
-- **Safe SQL**: `glue::glue_sql()` with `.con` binds parameters safely.
+- **Safe SQL**: `glue::glue_sql()` with `.con` binds parameters safely through a dedicated query executor component.
 - **Lineage**: each result gets a `data.table` attribute `"snowflake-sources"` listing objects seen in SQL (`FROM`/`JOIN`/`CALL`).
 - **Transactions**: begin/commit/rollback helpers.
+- **Observability-ready**: structured query history via `$run_query_history` helps debugging.
+- **Non-ODBC prototype**: experiment with `SnowflakeSQLAPIClient` to hit the Snowflake SQL REST API when drivers are unavailable.
 - **Dev-friendly**: works smoothly with `devtools::load_all()` and `devtools::document()`.
 
 ## Installation
@@ -34,7 +36,7 @@ The R6 Class `SnowflakeConnector` accepts connection parameters as found in [ODB
 This package deliberately does not parse YAML files or manage secrets.
 Keep secrets in the DSN, environment variables, or pass them as arguments.
 
-## Quick start
+## Quick start (ODBC connector)
 
 ```r
 library(snowflakeR)
@@ -102,6 +104,33 @@ con$transaction_commit()
 con$close()
 ```
 
+## Quick start (SQL API prototype)
+
+The experimental `SnowflakeSQLAPIClient` lets you validate workloads over Snowflake's SQL REST API without relying on the ODBC driver. You must provision and rotate OAuth/session tokens through your preferred secrets manager—tokens are never persisted by the client.
+
+```r
+library(snowflakeR)
+
+client <- SnowflakeSQLAPIClient$new(
+  account = "xy12345",          # <account> from <account>.<region>.snowflakecomputing.com
+  warehouse = "COMPUTE_WH",
+  database = "ANALYTICS",
+  schema = "PUBLIC"
+)
+
+# Provide a token from a secure vault or workload identity
+client$set_token(Sys.getenv("SNOWFLAKE_SQLAPI_TOKEN"))
+
+# Submit a statement (async = TRUE avoids long waits; poll with the request_id if needed)
+response <- client$submit_statement(
+  "SELECT CURRENT_ROLE() AS role_name",
+  async = TRUE
+)
+str(response)
+```
+
+> **Security heads-up:** use short-lived tokens, rotate credentials frequently, and avoid hard-coding secrets in scripts or git history. The client keeps tokens in memory only long enough to forward them as bearer headers.
+
 ## Usage patterns
 
 ### 1) Safe parameter interpolation
@@ -160,22 +189,23 @@ devtools::document()
 testthat::test_local()           # unit tests
 Sys.setenv(SNOWFLAKER_RUN_LIVE = "true", SNOWFLAKER_DSN = "snowflake-data-science")
 testthat::test_file("tests/testthat/test-r6-connector.R")
+testthat::test_file("tests/testthat/test-connector-components.R")
 ```
 
 ### Testing strategy
 
-Unit tests cover pure helpers (sqlQuerySources, etc.) without Snowflake.
-
-Live tests are skipped by default; enable with env var
-SNOWFLAKER_RUN_LIVE=true and provide SNOWFLAKER_DSN.
+Unit tests now mock DBI and HTTP interactions to exercise the modular connector pieces (`OdbcConnectionManager`, `SnowflakeQueryExecutor`) and the SQL API prototype. Live tests remain opt-in; enable with env var `SNOWFLAKER_RUN_LIVE=true` and provide `SNOWFLAKER_DSN`.
 
 
 ### FAQ
 
-**Q**: **Where do credentials come from?**  
+**Q**: **Where do credentials come from?**
 **A**: *From your ODBC DSN and/or arguments (uid, pwd). We don’t read YAML.*
 
-**Q**: **How do I use key-pair auth?**  
+**Q**: **What about API tokens for the SQL API client?**
+**A**: *Use a secrets manager (AWS Secrets Manager, GCP Secret Manager, HashiCorp Vault, etc.) to mint short-lived OAuth/session tokens. Call `client$set_token()` at runtime; never check tokens into source control.*
+
+**Q**: **How do I use key-pair auth?**
 **A**: *Configure it in the DSN / driver settings (outside this package) or pass the*
 *relevant connect arguments supported by odbc/Snowflake (e.g. authenticator,*
 *priv_key_file) directly to SnowflakeConnector$new(..., authenticator="SNOWFLAKE_JWT", priv_key_file="...").*

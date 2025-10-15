@@ -24,8 +24,12 @@ Imports:
     glue (>= 1.8.0),
     R6 (>= 2.5.1),
     utils (>= 4.4.1),
+    httr2 (>= 1.0.0)
 Suggests:
     testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
 Config/testthat/edition: 3
+VignetteBuilder: knitr
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
